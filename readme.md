@@ -124,3 +124,58 @@ it's amazing.
 i've made a start (using claude) of
 these in `lib/tokenzier.js` and
 `lib/parser.js`
+
+## grammar rules
+
+1. simple number `42`
+
+```
+program
+└── expression
+    └── atomic
+        └── number
+            └── 42
+```
+
+2. Addition `2+3`
+
+```
+program
+└── expression
+    └── additive
+        ├── atomic
+        │   └── number
+        │       └── 2
+        ├── PLUS
+        └── expression
+            └── atomic
+                └── number
+                    └── 3
+```
+
+3. Let binding `let x = 5\nx+3`
+
+```
+program
+└── expression
+    └── atomic
+        └── letBinding
+            ├── LET
+            ├── identifier (x)
+            ├── EQUALS
+            ├── expression
+            │   └── atomic
+            │       └── number
+            │           └── 5
+            ├── NEWLINE
+            └── expression
+                └── additive
+                    ├── atomic
+                    │   └── identifier
+                    │       └── x
+                    ├── PLUS
+                    └── expression
+                        └── atomic
+                            └── number
+                                └── 3
+```
