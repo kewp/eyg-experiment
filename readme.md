@@ -5,7 +5,66 @@ i'm trying to understand eyg. https://github.com/CrowdHailer/eyg-lang
 it's a language / ast that seems really
 interesting.
 
-## my understanding so far
+## edit 20 jan 2025
+
+busy going through the video that started this off,
+again https://www.youtube.com/watch?v=wuGx35UIKTk
+
+it's an interview with kris jenkins and he asks
+what the purpose of eyg is.
+
+it seems to boil down to _effects_, and in particular,
+being able to understand code and being able to say
+"this code cannot access the network" or rather
+"this _function_ cannot access the network.".
+
+so as i understand it - eyg let's you, or rather
+forces you, to specify for every function which
+effects it has, or ... it knows that this piece of
+code accesses the network, or accesses the console ...
+and so it can see where in your program this _might_
+occur ... bubbling up effects ...
+
+my question is - why is this not already a thing?
+can't existing languages and platforms do this?
+it sounds so useful ...
+
+### log messages
+
+peter gives the example of log messages - if i see
+a log message, let's say on the console, and i want
+to know where it came from ... how do i do that?
+
+well what if the language knew about accessing the
+console ...
+
+```js
+function one() {
+    console.log('error!')
+}
+function two() {
+    return 1*2
+}
+function combined() {
+    one();
+    two();
+}
+```
+
+we should know, in our editor, that `combined`
+can log to the console! why can't we "mouse over"
+(as peter says in the video) each function call / 
+line of our program and see the effects!
+
+of course, this would ... in javascript, say,
+take a complete rewrite ... i think ... because
+every library would have to declare what effects
+it uses ...
+
+although ... can't you just ... use the ast to
+see what might happen?
+
+## my understanding so far (previous readme)
 
 the insight peter, the creator, mentioned
 is that the abstract syntax tree is the
