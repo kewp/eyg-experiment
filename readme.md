@@ -64,6 +64,51 @@ it uses ...
 although ... can't you just ... use the ast to
 see what might happen?
 
+### simple?
+
+it seems like such a simple idea ... to just
+know how each ... which parts of your code
+go "outside" ... and to know how ... which means
+having declared what "outside" means, like
+"network access" or "file system" ...
+
+and then, to go further, to abstract that away
+and really make it simple ... to be able to
+decide on your own set of "outside"s ... right?
+it's so simple! aaah!
+
+it's so elegant ... you have your core language ...
+and then you just have a set of "things you can
+do outside" ...
+
+which makes this whole thing just super amazing -
+you can define "platforms" (an idea from ...
+can't remember his name, the big elm cheerleader
+who's now furloughed this idea into his own
+language, roc ...), where you just say "ok
+these are the things you can do here" ...
+and you can call them whatever you like!
+
+> i ... i dunno, i just feel like ... this ...
+> is such a profound and profoundly simple
+> and obviously ... revolutionary way of looking
+> at things / of writing code ... imagine if
+> you had code libraries that said "hey i use
+> this platform" which then specifies - ok,
+> this have `console.log` and `fetch` ...
+> _and_ you can see where it uses those, which
+> function calls make use of them! which then
+> bubbles through your code to show which parts
+> of your code do them!
+
+> or you could have another platform that's
+> completely user defined like `user.update`
+> or `account.get` ... !!! so you can then
+> trace _those_ effects!
+
+> ... this stuff makes me so excited, i can't
+> even ...
+
 ## my understanding so far (previous readme)
 
 the insight peter, the creator, mentioned
