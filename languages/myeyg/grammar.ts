@@ -1,14 +1,14 @@
-import { Rule, Sequence, Alternative, Optional, Many, Token } from '../../lib/grammar.js';
-import { TokenTypes } from './tokens.js';
+import { Rule, Sequence, Alternative, Optional, Many, TokenPattern, ASTNode } from '../../lib/grammar.ts';
+import { TokenTypes, TokenType } from './tokens.ts';
 
-function assert(condition, message) {
+function assert(condition: boolean, message: string): void {
     if (!condition) {
         throw new Error('Assertion failed: ' + message);
     }
 }
 
 // Validator for AST nodes
-function validateNode(node, context) {
+function validateNode(node: ASTNode, context: string): ASTNode {
     assert(node !== null, `Node cannot be null in ${context}`);
     assert(typeof node === 'object', `Node must be object in ${context}`);
     assert('0' in node, `Node must have '0' property in ${context}`);
@@ -41,7 +41,7 @@ function validateNode(node, context) {
 }
 
 // Define the grammar rules for MyEYG
-export const rules = [
+export const rules: Rule[] = [
     new Rule('program',
         'expression'
     ),
@@ -54,7 +54,7 @@ export const rules = [
         new Alternative(
             new Sequence(
                 'atomic',
-                new Token(TokenTypes.PLUS),
+                new TokenPattern(TokenTypes.PLUS),
                 'additive'  // Allow chaining of additions
             ),
             'atomic'  // Base case - just an atomic expression
@@ -70,18 +70,18 @@ export const rules = [
     ),
 
     new Rule('number',
-        new Token(TokenTypes.NUMBER)
+        new TokenPattern(TokenTypes.NUMBER)
     ),
 
     new Rule('identifier',
-        new Token(TokenTypes.IDENTIFIER)
+        new TokenPattern(TokenTypes.IDENTIFIER)
     ),
 
     new Rule('letBinding',
         new Sequence(
-            new Token(TokenTypes.LET),
-            new Token(TokenTypes.IDENTIFIER),
-            new Token(TokenTypes.EQUALS),
+            new TokenPattern(TokenTypes.LET),
+            new TokenPattern(TokenTypes.IDENTIFIER),
+            new TokenPattern(TokenTypes.EQUALS),
             'expression',
             'expression'
         )
@@ -90,15 +90,15 @@ export const rules = [
 
 // Define the semantic actions that convert parse trees to AST nodes
 export const actions = {
-    program: (expr) => {
+    program: (expr: ASTNode): ASTNode => {
         return validateNode(expr, 'program');
     },
 
-    expression: (expr) => {
+    expression: (expr: ASTNode): ASTNode => {
         return validateNode(expr, 'expression');
     },
 
-    additive: (expr) => {
+    additive: (expr: ASTNode | [ASTNode, any, ASTNode]): ASTNode => {
         // If it's a sequence (addition), create an addition node
         if (Array.isArray(expr)) {
             const [left, _, right] = expr;
@@ -120,11 +120,11 @@ export const actions = {
         return validateNode(expr, 'additive');
     },
 
-    atomic: (expr) => {
+    atomic: (expr: ASTNode): ASTNode => {
         return validateNode(expr, 'atomic');
     },
 
-    number: (token) => {
+    number: (token: { value: string }): ASTNode => {
         const node = {
             "0": "i",
             "v": parseInt(token.value)
@@ -132,7 +132,7 @@ export const actions = {
         return validateNode(node, 'number');
     },
 
-    identifier: (token) => {
+    identifier: (token: { value: string }): ASTNode => {
         const node = {
             "0": "v",
             "l": token.value
@@ -140,7 +140,7 @@ export const actions = {
         return validateNode(node, 'identifier');
     },
 
-    letBinding: ([_let, name, _eq, value, then]) => {
+    letBinding: ([_let, name, _eq, value, then]: [any, { value: string }, any, ASTNode, ASTNode]): ASTNode => {
         const node = {
             "0": "l",
             "l": name.value,
