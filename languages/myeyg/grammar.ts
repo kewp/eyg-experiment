@@ -32,9 +32,9 @@ function validateNode(node: ASTNode, context: string): ASTNode {
         case 'let':
             assert('name' in node, `Let node must have name property in ${context}`);
             assert('value' in node, `Let node must have value property in ${context}`);
-            assert('body' in node, `Let node must have body property in ${context}`);
+            assert('then' in node, `Let node must have then property in ${context}`);
             validateNode(node.value, `${context}.value`);
-            validateNode(node.body, `${context}.body`);
+            validateNode(node.then, `${context}.then`);
             break;
     }
     return node;  // Return the node for chaining
@@ -145,7 +145,7 @@ export const actions = {
             type: "let",
             name: name.value,
             value: value,
-            body: then
+            then: then
         };
         return validateNode(node, 'letBinding');
     }

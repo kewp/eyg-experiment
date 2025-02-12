@@ -91,7 +91,7 @@ export default class State {
                 this.setExpression(expression.function);
                 break;
             case LET:
-                this.push(new Assign(expression.name, expression.body, this.env));
+                this.push(new Assign(expression.name, expression.then, this.env));
                 this.setExpression(expression.value);
                 break;
             case VACANT:
@@ -180,7 +180,7 @@ export default class State {
             case Closure:
                 const closure = func as Closure;
                 this.env = closure.captured.set(closure.lambda.name, arg);
-                this.setExpression(closure.lambda.body);
+                this.setExpression(closure.lambda.then);
                 break;
             case Partial:
                 const partial = func as Partial;
@@ -196,7 +196,10 @@ export default class State {
                 const resume = func as Resume;
                 let reversed = resume.reversed;
                 while (reversed.size > 0) {
-                    this.push(reversed.first());
+                    const kont = reversed.first();
+                    if (kont !== undefined) {
+                        this.push(kont);
+                    }
                     reversed = reversed.pop();
                 }
                 this.setValue(arg);
@@ -374,10 +377,12 @@ function perform(label: string) {
         while (stack.size > 0) {
             let kont = stack.first();
             stack = stack.pop();
-            reversed = reversed.push(kont);
-            if (kont instanceof Delimit && kont.label === label) {
-                found = kont;
-                break;
+            if (kont !== undefined) {
+                reversed = reversed.push(kont);
+                if (kont instanceof Delimit && kont.label === label) {
+                    found = kont;
+                    break;
+                }
             }
         }
         if (found) {
@@ -390,11 +395,12 @@ function perform(label: string) {
     }
 }
 
-export class Effect {
+export class Effect extends Error {
     label: string;
     lift: any;
 
     constructor(label: string, lift: any) {
+        super(`Effect: ${label}`);
         this.label = label;
         this.lift = lift;
     }
