@@ -2,7 +2,51 @@ import { Map, Stack } from "npm:immutable";
 import { ASTNode } from "../grammar.ts";
 import { Continuation, Arg, Apply, Call, Assign, Delimit } from "./continuations.ts";
 import { DebugInfo } from "./types.ts";
-import { getVariable, cons, extend, select, tag, case_, nocases, perform, handle, builtin } from "./functions.ts";
+import { evaluate } from "./evaluators.ts";
+
+interface Caller {
+    call(state: State, func: any, arg: any): void;
+}
+
+class ClosureCaller implements Caller {
+    call(state: State, func: Closure, arg: any): void {
+        state.env = func.captured.set(func.lambda.name, arg);
+        state.setExpression(func.lambda.then);
+    }
+}
+
+class PartialCaller implements Caller {
+    call(state: State, func: Partial, arg: any): void {
+        let applied = func.applied.push(arg);
+
+        if (applied.size === func.impl.length) {
+            func.impl.apply(state, applied.reverse().toArray());
+        } else {
+            state.setValue(new Partial(func.exp, applied, func.impl));
+        }
+    }
+}
+
+class ResumeCaller implements Caller {
+    call(state: State, func: Resume, arg: any): void {
+        let reversed = func.reversed;
+        while (reversed.size > 0) {
+            const kont = reversed.first();
+            if (kont !== undefined) {
+                state.push(kont);
+            }
+            reversed = reversed.pop();
+        }
+        state.setValue(arg);
+    }
+}
+
+// Create callers map after all classes are defined
+const callers: Map<string, Caller> = Map<string, Caller>().withMutations(map => {
+    map.set('Closure', new ClosureCaller());
+    map.set('Partial', new PartialCaller());
+    map.set('Resume', new ResumeCaller());
+});
 
 export class Closure {
     lambda: any;
@@ -100,68 +144,7 @@ export class State {
     }
 
     eval(): void {
-        let expression = this.control;
-        switch (expression.type) {
-            case "variable":
-                this.setValue(getVariable(this.env, expression.name));
-                break;
-            case "lambda":
-                this.setValue(new Closure(expression, this.env));
-                break;
-            case "apply":
-                this.push(new Arg(expression.argument, this.env));
-                this.setExpression(expression.function);
-                break;
-            case "let":
-                this.push(new Assign(expression.name, expression.then, this.env));
-                this.setExpression(expression.value);
-                break;
-            case "vacant":
-                this.break = new Error("not implemented");
-                break;
-            case "integer":
-                this.setValue(expression.value);
-                break;
-            case "string":
-                this.setValue(expression.value);
-                break;
-            case "tail":
-                this.setValue(Stack());
-                break;
-            case "cons":
-                this.setValue(partial(expression, cons));
-                break;
-            case "empty":
-                this.setValue(Map());
-                break;
-            case "extend":
-            case "overwrite":
-                this.setValue(partial(expression, extend(expression.name)));
-                break;
-            case "select":
-                this.setValue(partial(expression, select(expression.name)));
-                break;
-            case "tag":
-                this.setValue(partial(expression, tag(expression.name)));
-                break;
-            case "case":
-                this.setValue(partial(expression, case_(expression.name)));
-                break;
-            case "nocases":
-                this.setValue(partial(expression, nocases));
-                break;
-            case "perform":
-                this.setValue(partial(expression, perform(expression.name)));
-                break;
-            case "handle":
-                this.setValue(partial(expression, handle(expression.name)));
-                break;
-            case "builtin":
-                this.setValue(partial(expression, builtin(expression.name)));
-                break;
-            default:
-                this.break = new Error("unrecognised expression");
-        }
+        evaluate(this, this.control);
     }
 
     apply(): any {
@@ -198,38 +181,13 @@ export class State {
     }
 
     call(func: Closure | Partial | Resume, arg: any): void {
-        switch (func.constructor) {
-            case Closure:
-                const closure = func as Closure;
-                this.env = closure.captured.set(closure.lambda.name, arg);
-                this.setExpression(closure.lambda.then);
-                break;
-            case Partial:
-                const partial = func as Partial;
-                let applied = partial.applied.push(arg);
-
-                if (applied.size === partial.impl.length) {
-                    partial.impl.apply(this, applied.reverse().toArray());
-                } else {
-                    this.setValue(new Partial(partial.exp, applied, partial.impl));
-                }
-                break;
-            case Resume:
-                const resume = func as Resume;
-                let reversed = resume.reversed;
-                while (reversed.size > 0) {
-                    const kont = reversed.first();
-                    if (kont !== undefined) {
-                        this.push(kont);
-                    }
-                    reversed = reversed.pop();
-                }
-                this.setValue(arg);
-                break;
-            default:
-                console.log(func, "FUUNC");
-                this.break = new Error("not a function");
+        const caller = callers.get(func.constructor.name);
+        if (!caller) {
+            console.log(func, "FUUNC");
+            this.break = new Error("not a function");
+            return;
         }
+        caller.call(this, func, arg);
     }
 
     loop(): any {
