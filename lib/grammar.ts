@@ -4,7 +4,7 @@ import { Token as TokenType } from './tokenizer.ts';
 export type Pattern = Rule | Sequence | Alternative | Optional | Many | TokenPattern | string;
 
 export interface ASTNode {
-  "0": string;
+  type: string;
   [key: string]: any;
 }
 
@@ -122,7 +122,7 @@ export class Grammar {
                 return result;
             }
             if (typeof result === 'object') {
-                if (!('type' in result || '0' in result)) {
+                if (!('type' in result)) {
                     throw new Error(`Invalid result in ${context}: ${JSON.stringify(result)}`);
                 }
                 return result;
@@ -237,7 +237,7 @@ export class Grammar {
         }
 
         // Validate AST structure
-        if (!('0' in finalResult)) {
+        if (!('type' in finalResult)) {
             throw new Error('Final result must be a valid AST node');
         }
         return finalResult;

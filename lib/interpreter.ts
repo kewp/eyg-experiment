@@ -4,26 +4,26 @@
 import { Map, Stack } from "npm:immutable";
 import { ASTNode } from "./grammar.ts";
 
-// Node types
-const VAR = "v"
-const LAMBDA = "f"
-const APPLY = "a"
-const LET = "l"
-const VACANT = "z"
-const INT = "i"
-const STRING = "s"
-const TAIL = "ta"
-const CONS = "c"
-const EMPTY = "u"
-const EXTEND = "e"
-const SELECT = "g"
-const OVERWRITE = "o"
-const TAG = "t"
-const CASE = "m"
-const NOCASES = "n"
-const PERFORM = "p"
-const HANDLE = "h"
-const BUILTIN = "b"
+// Node types - using descriptive names
+const VARIABLE = "variable"
+const LAMBDA = "lambda"
+const APPLY = "apply"
+const LET = "let"
+const VACANT = "vacant"
+const INTEGER = "integer"
+const STRING = "string"
+const TAIL = "tail"
+const CONS = "cons"
+const EMPTY = "empty"
+const EXTEND = "extend"
+const SELECT = "select"
+const OVERWRITE = "overwrite"
+const TAG = "tag"
+const CASE = "case"
+const NOCASES = "nocases"
+const PERFORM = "perform"
+const HANDLE = "handle"
+const BUILTIN = "builtin"
 
 const tail = Stack()
 const empty = Map()
@@ -79,29 +79,29 @@ export default class State {
 
     eval(): void {
         let expression = this.control;
-        switch (expression[0]) {
-            case VAR:
-                this.setValue(getVariable(this.env, expression.l));
+        switch (expression.type) {
+            case VARIABLE:
+                this.setValue(getVariable(this.env, expression.name));
                 break;
             case LAMBDA:
                 this.setValue(new Closure(expression, this.env));
                 break;
             case APPLY:
-                this.push(new Arg(expression.a, this.env));
-                this.setExpression(expression.f);
+                this.push(new Arg(expression.argument, this.env));
+                this.setExpression(expression.function);
                 break;
             case LET:
-                this.push(new Assign(expression.l, expression.t, this.env));
-                this.setExpression(expression.v);
+                this.push(new Assign(expression.name, expression.body, this.env));
+                this.setExpression(expression.value);
                 break;
             case VACANT:
                 this.break = new Error("not implemented");
                 break;
-            case INT:
-                this.setValue(expression.v);
+            case INTEGER:
+                this.setValue(expression.value);
                 break;
             case STRING:
-                this.setValue(expression.v);
+                this.setValue(expression.value);
                 break;
             case TAIL:
                 this.setValue(tail);
@@ -114,28 +114,28 @@ export default class State {
                 break;
             case EXTEND:
             case OVERWRITE:
-                this.setValue(partial(expression, extend(expression.l)));
+                this.setValue(partial(expression, extend(expression.name)));
                 break;
             case SELECT:
-                this.setValue(partial(expression, select(expression.l)));
+                this.setValue(partial(expression, select(expression.name)));
                 break;
             case TAG:
-                this.setValue(partial(expression, tag(expression.l)));
+                this.setValue(partial(expression, tag(expression.name)));
                 break;
             case CASE:
-                this.setValue(partial(expression, case_(expression.l)));
+                this.setValue(partial(expression, case_(expression.name)));
                 break;
             case NOCASES:
                 this.setValue(partial(expression, nocases));
                 break;
             case PERFORM:
-                this.setValue(partial(expression, perform(expression.l)));
+                this.setValue(partial(expression, perform(expression.name)));
                 break;
             case HANDLE:
-                this.setValue(partial(expression, handle(expression.l)));
+                this.setValue(partial(expression, handle(expression.name)));
                 break;
             case BUILTIN:
-                this.setValue(partial(expression, builtin(expression.l)));
+                this.setValue(partial(expression, builtin(expression.name)));
                 break;
             default:
                 this.break = new Error("unrecognised expression");
@@ -179,8 +179,8 @@ export default class State {
         switch (func.constructor) {
             case Closure:
                 const closure = func as Closure;
-                this.env = closure.captured.set(closure.lambda.l, arg);
-                this.setExpression(closure.lambda.b);
+                this.env = closure.captured.set(closure.lambda.name, arg);
+                this.setExpression(closure.lambda.body);
                 break;
             case Partial:
                 const partial = func as Partial;

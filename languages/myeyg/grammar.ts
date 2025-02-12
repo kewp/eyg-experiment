@@ -11,30 +11,30 @@ function assert(condition: boolean, message: string): void {
 function validateNode(node: ASTNode, context: string): ASTNode {
     assert(node !== null, `Node cannot be null in ${context}`);
     assert(typeof node === 'object', `Node must be object in ${context}`);
-    assert('0' in node, `Node must have '0' property in ${context}`);
+    assert('type' in node, `Node must have 'type' property in ${context}`);
 
-    switch (node['0']) {
-        case 'i':
-            assert(typeof node.v === 'number', `Integer node must have number value in ${context}`);
+    switch (node.type) {
+        case 'integer':
+            assert(typeof node.value === 'number', `Integer node must have number value in ${context}`);
             break;
-        case 'v':
-            assert(typeof node.l === 'string', `Variable node must have string name in ${context}`);
+        case 'variable':
+            assert(typeof node.name === 'string', `Variable node must have string name in ${context}`);
             break;
-        case 'a':
-            assert('f' in node, `Apply node must have f property in ${context}`);
-            assert('a' in node, `Apply node must have a property in ${context}`);
-            validateNode(node.f, `${context}.f`);
-            validateNode(node.a, `${context}.a`);
+        case 'apply':
+            assert('function' in node, `Apply node must have function property in ${context}`);
+            assert('argument' in node, `Apply node must have argument property in ${context}`);
+            validateNode(node.function, `${context}.function`);
+            validateNode(node.argument, `${context}.argument`);
             break;
-        case 'b':
-            assert(typeof node.l === 'string', `Builtin node must have string name in ${context}`);
+        case 'builtin':
+            assert(typeof node.name === 'string', `Builtin node must have string name in ${context}`);
             break;
-        case 'l':
-            assert('l' in node, `Let node must have l property in ${context}`);
-            assert('v' in node, `Let node must have v property in ${context}`);
-            assert('t' in node, `Let node must have t property in ${context}`);
-            validateNode(node.v, `${context}.v`);
-            validateNode(node.t, `${context}.t`);
+        case 'let':
+            assert('name' in node, `Let node must have name property in ${context}`);
+            assert('value' in node, `Let node must have value property in ${context}`);
+            assert('body' in node, `Let node must have body property in ${context}`);
+            validateNode(node.value, `${context}.value`);
+            validateNode(node.body, `${context}.body`);
             break;
     }
     return node;  // Return the node for chaining
@@ -103,16 +103,16 @@ export const actions = {
         if (Array.isArray(expr)) {
             const [left, _, right] = expr;
             const node = {
-                "0": "a",
-                "f": {
-                    "0": "a",
-                    "f": {
-                        "0": "b",
-                        "l": "int_add"
+                type: "apply",
+                function: {
+                    type: "apply",
+                    function: {
+                        type: "builtin",
+                        name: "int_add"
                     },
-                    "a": left
+                    argument: left
                 },
-                "a": right
+                argument: right
             };
             return validateNode(node, 'additive');
         }
@@ -126,26 +126,26 @@ export const actions = {
 
     number: (token: { value: string }): ASTNode => {
         const node = {
-            "0": "i",
-            "v": parseInt(token.value)
+            type: "integer",
+            value: parseInt(token.value)
         };
         return validateNode(node, 'number');
     },
 
     identifier: (token: { value: string }): ASTNode => {
         const node = {
-            "0": "v",
-            "l": token.value
+            type: "variable",
+            name: token.value
         };
         return validateNode(node, 'identifier');
     },
 
     letBinding: ([_let, name, _eq, value, then]: [any, { value: string }, any, ASTNode, ASTNode]): ASTNode => {
         const node = {
-            "0": "l",
-            "l": name.value,
-            "v": value,
-            "t": then
+            type: "let",
+            name: name.value,
+            value: value,
+            body: then
         };
         return validateNode(node, 'letBinding');
     }

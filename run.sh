@@ -1,3 +1,3 @@
 #!/bin/bash
 
-deno run main.js
+deno run main.ts

@@ -20,6 +20,8 @@ function evaluate(code: string): any {
     console.log('  Input:', code);
     const tokens = tokenizer.tokenize(code);
 
+    console.log('  Tokens:', tokens);
+
     console.log('  Parsing...');
     const ast = parser.parse(tokens);
 
@@ -29,7 +31,12 @@ function evaluate(code: string): any {
     state.debug = debug;  // Enable debug mode in interpreter
     state.debugState = debugState;  // Provide debug function
 
-    return state.control;
+    return {
+        input: code,
+        tokens: tokens,
+        ast: ast,
+        result: state.control
+    }
 }
 
 const tests: Test[] = [
@@ -55,7 +62,10 @@ tests.forEach((test) => {
     console.log(`\nTesting: ${test.name}`);
 
     try {
-        const result = evaluate(test.code);
+        const res = evaluate(test.code);
+        console.log(res.tokens);
+        console.log(res.ast);
+        const result = res.result;
         console.log('  Result:', result);
         console.log('  Expected:', test.expected);
         console.log(result === test.expected ? '  PASSED ✅' : '  FAILED ❌');
